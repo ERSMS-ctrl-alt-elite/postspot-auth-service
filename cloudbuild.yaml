@@ -31,7 +31,7 @@ steps:
         cd environments/$BRANCH_NAME
 
         source /workspace/latest_image_tag.env
-        export TF_VAR_gcp_project_id=$PROJECT_ID
+        export TF_VAR_gcp_project_id=${_PROJECT_ID}
         export TF_VAR_environment=$BRANCH_NAME
 
         terraform init
