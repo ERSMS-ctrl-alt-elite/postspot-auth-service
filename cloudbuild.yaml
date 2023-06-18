@@ -45,6 +45,8 @@ steps:
         echo "*******************************************************************************"
       fi 
 
+options:
+  logging: CLOUD_LOGGING_ONLY
 images:
 - '${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}-${_ENVIRONMENT}'
 timeout: "1600s"
