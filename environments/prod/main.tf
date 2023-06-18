@@ -3,6 +3,7 @@
 /* -------------------------------------------------------------------------- */
 resource "google_cloud_run_v2_service" "default" {
   name     = "${var.service_name}-${var.environment}"
+  project  = var.gcp_project_id
   location = var.gcp_region 
   ingress  = "INGRESS_TRAFFIC_ALL"
 
