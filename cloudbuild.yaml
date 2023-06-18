@@ -1,0 +1,50 @@
+steps:
+
+- id: Build the container image
+  name: 'gcr.io/cloud-builders/docker'
+  args: [ 'build', '-t', '${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}-${_ENVIRONMENT}', '.' ]
+
+- id: Push the container image to Artifact Registry
+  name: 'gcr.io/cloud-builders/docker'
+  args: [ 'push', '${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}-${_ENVIRONMENT}']
+
+- id: Get latest image tag
+  name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: 'bash'
+  args: 
+  - '-c'
+  - | 
+      gcloud artifacts docker images list \
+          ${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY} \
+          --filter="package=${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}-${_ENVIRONMENT}" \
+          --sort-by="~UPDATE_TIME" \
+          --limit=1 \
+          --format="value(format("export\ TF_VAR_latest_image_tag={0}@{1}",package,version))" > /workspace/latest_image_tag.env
+
+- id: 'Prepare and apply Terraform migration'
+  name: 'hashicorp/terraform:1.0.0'
+  entrypoint: 'sh'
+  args: 
+  - '-c'
+  - | 
+      if [ -d "environments/$BRANCH_NAME/" ]; then
+        cd environments/$BRANCH_NAME
+
+        source /workspace/latest_image_tag.env
+        export TF_VAR_gcp_project_id=$PROJECT_ID
+        export TF_VAR_environment=$BRANCH_NAME
+
+        terraform init
+        terraform fmt -check
+        terraform validate
+        terraform plan
+        terraform apply -auto-approve
+      else
+        echo "***************************** SKIPPING APPLYING *******************************"
+        echo "Branch '$BRANCH_NAME' does not represent an official environment."
+        echo "*******************************************************************************"
+      fi 
+
+images:
+- '${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}-${_ENVIRONMENT}'
+timeout: "1600s"
