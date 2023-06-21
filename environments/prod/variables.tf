@@ -24,3 +24,7 @@ variable "service_name" {
 variable "latest_image_tag" {
   type = string
 }
+
+variable "api_url" {
+  type = string
+}

@@ -20,6 +20,22 @@ resource "google_cloud_run_v2_service" "default" {
           }
         }
       }
+
+      env {
+        name = "RECOMMENDATION_SERVICE_SECRET_KEY" 
+        value_source {
+          secret_key_ref {
+            secret = "RECOMMENDATION_SERVICE_SECRET_KEY"
+            version = "1"
+          }
+        }
+      }
+
+      env {
+        name = "API_URL" 
+        value = var.api_url
+      }
+
     }
   }
 }

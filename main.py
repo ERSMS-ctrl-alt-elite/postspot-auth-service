@@ -1,4 +1,5 @@
 import os
+import requests
 import logging
 from datetime import datetime
 from functools import wraps
@@ -19,6 +20,8 @@ env = Environment(os.environ["ENV"]) if "ENV" in os.environ else Environment.PRO
 
 config = Config(env)
 
+API_URL = os.environ["API_URL"]
+
 # ----------------------------- Configure logging ---------------------------- #
 logging.basicConfig(
     level=config.log_level,
@@ -28,8 +31,8 @@ logger = logging.getLogger(__name__)
 
 # ------------------------------- Create an app ------------------------------ #
 logger.info(f"Running application in {env.value} environment")
-app = Flask("PostSpot Notification Service")
-app.secret_key = "PostSpot123"
+app = Flask("PostSpot Recommendation Service")
+app.secret_key = os.environ["RECOMMENDATION_SERVICE_SECRET_KEY"]
 
 # -------------------------- Create database gateway ------------------------- #
 data_gateway = FirestoreGateway()
@@ -43,6 +46,48 @@ SWAGGERUI_BLUEPRINT = get_swaggerui_blueprint(
 app.register_blueprint(SWAGGERUI_BLUEPRINT, url_prefix=SWAGGER_URL)
 
 
+def user_signed_up(function):
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        token = None
+
+        if "Authorization" in request.headers:
+            bearer = request.headers.get("X-Forwarded-Authorization")
+            token = bearer.split()[1]
+
+        if not token:
+            return jsonify({"message": "Token not provided"}), 401
+
+        try:
+            (
+                google_id,
+                name,
+                email,
+                token_issued_t,
+                token_expired_t,
+            ) = decode_openid_token(token)
+
+            token_issued_at_datetime = datetime.fromtimestamp(token_issued_t)
+            token_exp_datetime = datetime.fromtimestamp(token_expired_t)
+            logger.debug(
+                f"Token issued at {token_issued_at_datetime} ({token_issued_t})"
+            )
+            logger.debug(f"Token expires at {token_exp_datetime} ({token_expired_t})")
+
+            try:
+                current_user = data_gateway.read_user(google_id)
+            except Exception as e:
+                logger.error(f"User not signed up: {e}")
+                return jsonify({"message": "Invalid token or user not signed up"}), 401
+        except Exception as e:
+            logger.error(f"Invalid token: {e}")
+            return jsonify({"message": "Invalid token or user not signed up"}), 401
+
+        return function(current_user, *args, **kwargs)
+
+    return wrapper
+
+
 # ---------------------------------------------------------------------------- #
 #                                   Endpoints                                  #
 # ---------------------------------------------------------------------------- #
@@ -50,7 +95,14 @@ app.register_blueprint(SWAGGERUI_BLUEPRINT, url_prefix=SWAGGER_URL)
 
 @app.route("/")
 def index():
-    return "Hello from PostSpot's notification service"
+    return "Hello from PostSpot's recommendation service"
+
+
+@app.route("/v1/recommendations/<user_google_id>", methods=["GET"])
+@user_signed_up
+def get_recommendations(user_google_id):
+    r = requests.get(f"{API_URL}/v1/users")
+    return "OK", 200
 
 
 if __name__ == "__main__":

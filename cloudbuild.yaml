@@ -33,6 +33,7 @@ steps:
         source /workspace/latest_image_tag.env
         export TF_VAR_gcp_project_id=${_PROJECT_ID}
         export TF_VAR_environment=$BRANCH_NAME
+        export TF_VAR_api_url=${_API_URL}
 
         terraform init
         terraform fmt -check
