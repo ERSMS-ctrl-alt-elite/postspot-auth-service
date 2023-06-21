@@ -18,7 +18,7 @@ variable "app_name" {
 
 variable "service_name" {
   type = string
-  default = "notification-service"
+  default = "recommendation-service"
 }
 
 variable "latest_image_tag" {

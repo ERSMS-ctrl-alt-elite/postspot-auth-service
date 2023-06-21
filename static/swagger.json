@@ -3,7 +3,7 @@
   "info": {
     "description": "PostSpot team",
     "version": "1.0.0",
-    "title": "PostSpot notification service",
+    "title": "PostSpot recommendation service",
     "contact": {
       "email": "postspot@gmail.com"
     },

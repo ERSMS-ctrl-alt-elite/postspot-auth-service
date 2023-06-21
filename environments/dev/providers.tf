@@ -1,7 +1,7 @@
 terraform {
   backend "gcs" {
     bucket = "postspot-tf-state"
-    prefix = "notification-service/env/dev"
+    prefix = "recommendation-service/env/dev"
   }
 
   required_providers {

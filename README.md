@@ -1,1 +1,1 @@
-# postspot-notification-service
+# postspot-recommendation-service
