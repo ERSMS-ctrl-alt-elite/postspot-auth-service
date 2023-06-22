@@ -3,6 +3,7 @@ import requests
 import logging
 from datetime import datetime
 from functools import wraps
+from concurrent.futures import ThreadPoolExecutor
 
 from flask import Flask, request, jsonify
 from flask_swagger_ui import get_swaggerui_blueprint
@@ -20,7 +21,7 @@ env = Environment(os.environ["ENV"]) if "ENV" in os.environ else Environment.PRO
 
 config = Config(env)
 
-API_URL = os.environ["API_URL"]
+# API_URL = os.environ["API_URL"]
 
 # ----------------------------- Configure logging ---------------------------- #
 logging.basicConfig(
@@ -32,7 +33,7 @@ logger = logging.getLogger(__name__)
 # ------------------------------- Create an app ------------------------------ #
 logger.info(f"Running application in {env.value} environment")
 app = Flask("PostSpot Recommendation Service")
-app.secret_key = os.environ["RECOMMENDATION_SERVICE_SECRET_KEY"]
+# app.secret_key = os.environ["RECOMMENDATION_SERVICE_SECRET_KEY"]
 
 # -------------------------- Create database gateway ------------------------- #
 data_gateway = FirestoreGateway()
@@ -91,7 +92,8 @@ def user_signed_up(function):
 # ---------------------------------------------------------------------------- #
 #                                   Endpoints                                  #
 # ---------------------------------------------------------------------------- #
-
+# TODO
+URL_PATH = "https://postspot-api-gateway-eu-dev-a5mqnrt6.nw.gateway.dev"
 
 @app.route("/")
 def index():
@@ -99,12 +101,19 @@ def index():
 
 
 @app.route("/v1/recommendations/<user_google_id>", methods=["GET"])
-@user_signed_up
+# @user_signed_up
 def get_recommendations(user_google_id):
-    r = requests.get(f"{API_URL}/v1/users")
-    return "OK", 200
+    r = requests.get(f"{URL_PATH}/v1/users/{user_google_id}/followees")
+    folowees = r.json()
+    
+    def get_posts_by_author(author):
+        author = author.split('/')[-1]
+        return requests.get(f"{URL_PATH}/v1/posts", params={"author": author}).json()
 
+    with ThreadPoolExecutor() as executor:
+        posts = executor.map(get_posts_by_author, folowees) 
+    return [post for author_posts in posts for post in author_posts], 200
 
 if __name__ == "__main__":
     debug = env != Environment.PRODUCTION
-    app.run(debug=debug, port=8080)
+    app.run(debug=debug, port=8082)
