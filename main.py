@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 # ------------------------------- Create an app ------------------------------ #
 logger.info(f"Running application in {env.value} environment")
 app = Flask("PostSpot Recommendation Service")
-# app.secret_key = os.environ["RECOMMENDATION_SERVICE_SECRET_KEY"]
+app.secret_key = os.environ["RECOMMENDATION_SERVICE_SECRET_KEY"]
 
 # -------------------------- Create database gateway ------------------------- #
 data_gateway = FirestoreGateway()
@@ -42,10 +42,11 @@ data_gateway = FirestoreGateway()
 SWAGGER_URL = "/swagger"
 API_URL = "/static/swagger.json"
 SWAGGERUI_BLUEPRINT = get_swaggerui_blueprint(
-    SWAGGER_URL, API_URL, config={"app_name": "Seans-Python-Flask-REST-Boilerplate"}
+    SWAGGER_URL, API_URL, config={"app_name": "PostSpot Recommendation Service"}
 )
 app.register_blueprint(SWAGGERUI_BLUEPRINT, url_prefix=SWAGGER_URL)
 
+POST_API_URL = os.environ["POST_API_URL"]
 
 def user_signed_up(function):
     @wraps(function)
@@ -93,22 +94,17 @@ def user_signed_up(function):
 #                                   Endpoints                                  #
 # ---------------------------------------------------------------------------- #
 # TODO
-URL_PATH = "https://postspot-api-gateway-eu-dev-a5mqnrt6.nw.gateway.dev"
-
-@app.route("/")
-def index():
-    return "Hello from PostSpot's recommendation service"
-
+#"https://postspot-api-gateway-eu-dev-a5mqnrt6.nw.gateway.dev"
 
 @app.route("/v1/recommendations/<user_google_id>", methods=["GET"])
 # @user_signed_up
 def get_recommendations(user_google_id):
-    r = requests.get(f"{URL_PATH}/v1/users/{user_google_id}/followees")
+    r = requests.get(f"{POST_API_URL}/v1/users/{user_google_id}/followees")
     folowees = r.json()
     
     def get_posts_by_author(author):
         author = author.split('/')[-1]
-        return requests.get(f"{URL_PATH}/v1/posts", params={"author": author}).json()
+        return requests.get(f"{POST_API_URL}/v1/posts", params={"author": author}).json()
 
     with ThreadPoolExecutor() as executor:
         posts = executor.map(get_posts_by_author, folowees) 

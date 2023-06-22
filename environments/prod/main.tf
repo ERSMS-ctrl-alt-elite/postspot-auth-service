@@ -20,7 +20,6 @@ resource "google_cloud_run_v2_service" "default" {
           }
         }
       }
-
       env {
         name = "RECOMMENDATION_SERVICE_SECRET_KEY" 
         value_source {
@@ -32,7 +31,7 @@ resource "google_cloud_run_v2_service" "default" {
       }
 
       env {
-        name = "API_URL" 
+        name = "POST_API_URL" 
         value = var.api_url
       }
 
