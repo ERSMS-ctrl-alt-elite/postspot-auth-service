@@ -104,17 +104,14 @@ def index():
 # @user_signed_up
 def get_recommendations(user_google_id):
     r = requests.get(f"{URL_PATH}/v1/users/{user_google_id}/followees")
-    print(r.json())
     folowees = r.json()
     
     def get_posts_by_author(author):
         author = author.split('/')[-1]
-        print(author)
         return requests.get(f"{URL_PATH}/v1/posts", params={"author": author}).json()
 
     with ThreadPoolExecutor() as executor:
         posts = executor.map(get_posts_by_author, folowees) 
-    # print([post for post in posts])
     return [post for author_posts in posts for post in author_posts], 200
 
 if __name__ == "__main__":
