@@ -97,10 +97,10 @@ def user_signed_up(function):
 def get_recommendations(user_google_id):
     logging.debug(f"fetching: {POST_API_URL}/v1/users/{user_google_id}/followees")
     r = requests.get(f"{POST_API_URL}/v1/users/{user_google_id}/followees")
-    folowees = r.json()
+    folowees = r.json()["user"]
     logging.debug(f"User follows {len(folowees)} users")
     def get_posts_by_author(author):
-        author = author.split('/')[-1]
+        author = author["google_id"]
         logging.debug(f"fetching: {POST_API_URL}/v1/posts?author={author}")
         return requests.get(f"{POST_API_URL}/v1/posts", params={"author": author}).json()
 
