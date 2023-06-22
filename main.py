@@ -21,8 +21,6 @@ env = Environment(os.environ["ENV"]) if "ENV" in os.environ else Environment.PRO
 
 config = Config(env)
 
-# API_URL = os.environ["API_URL"]
-
 # ----------------------------- Configure logging ---------------------------- #
 logging.basicConfig(
     level=config.log_level,
@@ -93,17 +91,17 @@ def user_signed_up(function):
 # ---------------------------------------------------------------------------- #
 #                                   Endpoints                                  #
 # ---------------------------------------------------------------------------- #
-# TODO
-#"https://postspot-api-gateway-eu-dev-a5mqnrt6.nw.gateway.dev"
 
 @app.route("/v1/recommendations/<user_google_id>", methods=["GET"])
 # @user_signed_up
 def get_recommendations(user_google_id):
+    logging.debug(f"fetching: {POST_API_URL}/v1/users/{user_google_id}/followees")
     r = requests.get(f"{POST_API_URL}/v1/users/{user_google_id}/followees")
     folowees = r.json()
-    
+    logging.debug(f"User follows {len(folowees)} users")
     def get_posts_by_author(author):
         author = author.split('/')[-1]
+        logging.debug(f"fetching: {POST_API_URL}/v1/posts?author={author}")
         return requests.get(f"{POST_API_URL}/v1/posts", params={"author": author}).json()
 
     with ThreadPoolExecutor() as executor:
